@@ -1,0 +1,8 @@
+# Environment variables (API keys)
+.env
+
+# Python virtual environment
+.venv/
+
+# Generated datasets
+data/
