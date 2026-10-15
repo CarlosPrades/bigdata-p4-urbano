@@ -5,4 +5,15 @@
 .venv/
 
 # Generated datasets
-data/
+
+# Raw data
+data/raw/**/*
+!data/raw/.gitkeep
+
+# Curated data
+data/curated/**/*
+!data/curated/.gitkeep
+
+# Staged data
+data/staged/**/*
+!data/staged/.gitkeep
