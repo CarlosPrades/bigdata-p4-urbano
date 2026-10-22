@@ -1,10 +1,8 @@
-# Environment variables (API keys)
+# Datos y credenciales
+data/*.csv
+data/*.json
 .env
-
-# Python virtual environment
-.venv/
-
-# Generated datasets
+*.pem
 
 # Raw data
 data/raw/**/*
@@ -17,3 +15,18 @@ data/curated/**/*
 # Staged data
 data/staged/**/*
 !data/staged/.gitkeep
+
+# Entornos Python
+.venv/
+__pycache__/
+*.pyc
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Docker
+docker-volumes/
+
+# MkDocs
+site/
+

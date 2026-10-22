@@ -6,24 +6,34 @@ from datetime import date
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Project root directory
+# Directorio raíz del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load API key
+# Cargar variables de entorno
 load_dotenv(BASE_DIR / ".env")
 
-API_URL = "https://opendata.aemet.es/opendata/sh/a9a2d26d"
 API_KEY = os.getenv("API_KEY")
 
-# Output directory
+# Endpoint de AEMET: sustituir por el conjunto de datos elegido
+API_URL = (
+    "https://opendata.aemet.es/opendata/api/"
+    "valores/climatologicos/diarios/datos/"
+    "fechaini/2026-10-15T00:00:00UTC/"
+    "fechafin/2026-10-29T23:59:59UTC/"
+    "estacion/8416Y"
+)
+
+# Carpeta donde se guardarán los datos originales
 DATA_DIR = BASE_DIR / "data" / "raw"
 
 
 def obtener_datos():
-    """Download JSON data from AEMET."""
+    """Descarga los datos desde la API de AEMET."""
 
     if not API_KEY:
-        raise ValueError("API_KEY not found in .env")
+        raise ValueError("No se ha encontrado API_KEY en .env")
+
+    print("1. Conectando con AEMET...")
 
     response = requests.get(
         API_URL,
@@ -34,33 +44,41 @@ def obtener_datos():
 
     resultado = response.json()
 
-    # AEMET endpoints may return a separate data URL
-    if isinstance(resultado, dict) and "datos" in resultado:
-        response = requests.get(
-            resultado["datos"],
-            timeout=60
-        )
-        response.raise_for_status()
-        return response.json()
+    # Comprobar la respuesta de la API
+    if not isinstance(resultado, dict):
+        raise ValueError("Respuesta inicial inesperada")
 
-    return resultado
+    if resultado.get("estado") != 200:
+        raise ValueError(
+            f"Error de AEMET: {resultado.get('descripcion')}"
+        )
+
+    # Obtener la URL temporal de descarga
+    url_datos = resultado.get("datos")
+
+    if not url_datos:
+        raise ValueError("AEMET no ha proporcionado URL de datos")
+
+    print("2. Descargando datos...")
+
+    response = requests.get(url_datos, timeout=60)
+    response.raise_for_status()
+
+    return response.json()
 
 
 def guardar_json(datos):
-    """Create and save the JSON dataset."""
+    """Guarda los datos originales en formato JSON."""
 
-    # Create directory if it doesn't exist
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Generate filename using today's date
     fecha = date.today().isoformat()
     archivo = DATA_DIR / f"dataset_{fecha}.json"
 
-    # Write JSON file
     with open(archivo, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
 
-    print(f"JSON file created successfully: {archivo}")
+    print(f"Datos guardados en: {archivo}")
 
 
 if __name__ == "__main__":
@@ -68,5 +86,7 @@ if __name__ == "__main__":
         datos = obtener_datos()
         guardar_json(datos)
 
+        print("Ingesta completada correctamente.")
+
     except (requests.RequestException, ValueError) as e:
-        print(f"Error: {e}")
+        print(f"Error durante la ingesta: {e}")
